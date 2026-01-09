@@ -1,9 +1,9 @@
 /** @typedef {import("./Expr").Expr} Expr */
 /** @typedef {import('./Token').Token} Token */
 
-import { Assign, Binary, Grouping, Literal, Unary, Variable } from "./Expr.js";
+import { Assign, Binary, Grouping, Literal, Logical, Unary, Variable } from "./Expr.js";
 import { Lox } from "./Lox.js";
-import { Block, Expression, Print, Stmt, Var } from "./Stmt.js";
+import { Block, Expression, If, Print, Stmt, Var, While } from "./Stmt.js";
 import { TokenType } from "./TokenType.js";
 
 /** @typedef {keyof(typeof TokenType)} TokenType */
@@ -29,7 +29,7 @@ export class Parser {
       statements.push(this.declaration());
     }
 
-    return statements; 
+    return statements;
   }
   /**
    * @returns {Stmt}
@@ -59,10 +59,49 @@ export class Parser {
    * @returns {Stmt}
    */
   statement() {
+    if (this.match(TokenType.FOR)) return this.for();
+    if (this.match(TokenType.IF)) return this.ifStatement();
     if (this.match(TokenType.PRINT)) return this.printStatement();
+    if (this.match(TokenType.WHILE)) return this.while();
     if (this.match(TokenType.LEFT_BRACE)) return this.blockStatement();
 
     return this.expressionStatement();
+  }
+  /**
+   * @returns {Stmt}
+   */
+  for() {
+    this.consume(TokenType.LEFT_PAREN, "Expect '(' after 'for'.");
+    let initializer;
+    if (this.match(TokenType.SEMICOLON)) {
+      initializer = null;
+    } else if (this.match(TokenType.VAR)) {
+      initializer = this.varDeclaration();
+    } else {
+      initializer = this.expressionStatement();
+    }
+
+    let condition;
+    if (this.check(TokenType.SEMICOLON)) {
+      condition = new Literal(true);
+    } else {
+      condition = this.expression();
+    }
+    this.consume(TokenType.SEMICOLON, "Expect ';' condition");
+
+    let increment;
+    if (!this.check(TokenType.RIGHT_PAREN)) {
+      increment = this.expression();
+    }
+    this.consume(TokenType.RIGHT_PAREN, "Expect ')' after for loop increment");
+
+    let body = this.statement();
+    if (increment) {
+      body = new Block([body, increment]);
+    }
+    const whileStmt = new While(condition, body);
+    if (!initializer) return whileStmt;
+    return new Block([initializer, whileStmt]);
   }
   /**
    * @returns {Stmt}
@@ -75,13 +114,39 @@ export class Parser {
   /**
    * @returns {Stmt}
    */
+  while() {
+    this.consume(TokenType.LEFT_PAREN, "Expect '(' after 'while'.");
+    const condition = this.expression();
+    this.consume(TokenType.RIGHT_PAREN, "Expect ')' after while condition.");
+
+    const body = this.statement();
+    return new While(condition, body);
+  }
+  /**
+   * @returns {Stmt}
+   */
   blockStatement() {
     const statements = [];
-    while(!this.check(TokenType.RIGHT_BRACE) && !this.isAtEnd()) {
+    while (!this.check(TokenType.RIGHT_BRACE) && !this.isAtEnd()) {
       statements.push(this.declaration());
     }
     this.consume(TokenType.RIGHT_BRACE, "Expect '}' after block.");
     return new Block(statements);
+  }
+  /**
+   * @returns {Stmt}
+   */
+  ifStatement() {
+    this.consume(TokenType.LEFT_PAREN, "Expect '(' after 'if'.");
+    const condition = this.expression();
+    this.consume(TokenType.RIGHT_PAREN, "Expect ')' after if condition.");
+
+    const thenBranch = this.statement();
+    let elseBranch = null;
+    if (this.match(TokenType.ELSE)) {
+      elseBranch = this.statement();
+    }
+    return new If(condition, thenBranch, elseBranch);
   }
   /**
    * @returns {Stmt}
@@ -101,7 +166,7 @@ export class Parser {
    * @returns {Expr}
    */
   assignment() {
-    const expr = this.equality();
+    const expr = this.or();
     if (this.match(TokenType.EQUAL)) {
       const equals = this.previous();
       const value = this.assignment();
@@ -114,6 +179,27 @@ export class Parser {
     return expr;
   }
   /**
+   * @returns {Expr}
+   */
+  or() {
+    let expr = this.and();
+    while (this.match(TokenType.OR)) {
+      expr = new Logical(expr, this.previous(), this.and());
+    }
+    return expr
+  }
+  /**
+   * @returns {Expr}
+   */
+  and() {
+    let expr = this.equality();
+    while (this.match(TokenType.AND)) {
+      expr = new Logical(expr, this.previous(), this.equality());
+    }
+    return expr
+  }
+  /**
+   * 
    * @returns {Expr}
    */
   equality() {

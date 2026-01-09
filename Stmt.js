@@ -2,6 +2,9 @@
 /** @typedef {import("./Token").Token} Token */
 
 export class Stmt {
+  /**
+   * @returns {any}
+   */
   accept(visitor) {
     throw new Error("Cannot invoke accept on abstract class 'Stmt'");
   }
@@ -35,6 +38,24 @@ export class Expression extends Stmt {
   }
 }
  
+export class If extends Stmt {
+  /**
+   @param {Expr} condition
+   @param {Stmt} thenBranch
+   @param {Stmt} elseBranch
+   */
+  constructor(condition, thenBranch, elseBranch) {
+    super();
+    this.condition = condition;
+    this.thenBranch = thenBranch;
+    this.elseBranch = elseBranch;
+  }
+
+  accept(visitor) {
+    return visitor.visitIfStmt(this);
+  }
+}
+ 
 export class Print extends Stmt {
   /**
    @param {Expr} expression
@@ -62,5 +83,21 @@ export class Var extends Stmt {
 
   accept(visitor) {
     return visitor.visitVarStmt(this);
+  }
+}
+ 
+export class While extends Stmt {
+  /**
+   @param {Expr} condition
+   @param {Stmt} body
+   */
+  constructor(condition, body) {
+    super();
+    this.condition = condition;
+    this.body = body;
+  }
+
+  accept(visitor) {
+    return visitor.visitWhileStmt(this);
   }
 }

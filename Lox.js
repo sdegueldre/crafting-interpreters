@@ -8,11 +8,23 @@ import { Parser } from "./Parser.js";
 import { AstPrinter } from "./AstPrinter.js";
 import { Interpreter } from "./Interpreter.js";
 
+function parseOption(optStr) {
+  if (optStr.startsWith("--")) {
+    return optStr.slice(2).split("=");
+  }
+  return [optStr.slice(1), true];
+}
+
 export class Lox {
   static hadError = false;
   static hadRuntimeError = false;
   static interpreter = new Interpreter();
+  static astPrinter = new AstPrinter();
+  static options = {};
   static main(args) {
+    const optsIdx = args.findIndex(arg => !arg.startsWith('-'));
+    const optionStrings = args.splice(0, optsIdx === -1 ? undefined : optsIdx);
+    this.options = Object.fromEntries(optionStrings.map(parseOption));
     if (args.length > 1) {
       console.log("Usage: jlox [script]");
       process.exit(64);
@@ -47,9 +59,14 @@ export class Lox {
 
     const parser = new Parser(tokens);
     const statements = parser.parse();
+    if(this.options.print_ast) {
+      for (const stmt of statements)
+        console.log(this.astPrinter.print(stmt));
+    }
 
     // Stop if there was a syntax error.
     if (this.hadError) return;
+    if (this.options.no_run) return;
 
     this.interpreter.interpret(statements);
   }

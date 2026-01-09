@@ -191,6 +191,19 @@ export class Interpreter {
     return value;
   }
   /**
+   * @param {import('./Expr').Logical} expr 
+   * @returns 
+   */
+  visitLogicalExpr(expr) {
+    const left = this.evaluate(expr.left);
+    if (expr.operator.type === TokenType.OR) {
+      if (isTruthy(left)) return left;
+    } else {
+      if (!isTruthy(left)) return left;
+    }
+    return this.evaluate(expr.right);
+  }
+  /**
    * @param {import('./Stmt').Expression} stmt 
    * @returns 
    */
@@ -219,5 +232,20 @@ export class Interpreter {
    */
   visitBlockStmt(stmt) {
     this.executeBlock(stmt.statements, new Environment(this.environment));
+  }
+  /**
+   * @param {import('./Stmt').If} stmt 
+   * @returns 
+   */
+  visitIfStmt(stmt) {
+    if (isTruthy(this.evaluate(stmt.condition))) this.execute(stmt.thenBranch);
+    else if (stmt.elseBranch) this.execute(stmt.elseBranch);
+  }
+  /**
+   * @param {import('./Stmt').While} stmt 
+   * @returns 
+   */
+  visitWhileStmt(stmt) {
+    while (isTruthy(this.evaluate(stmt.condition))) this.execute(stmt.body);
   }
 }

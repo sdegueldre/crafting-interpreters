@@ -13,14 +13,17 @@ const EXPRESSION_TYPES = {
   Literal: [["object", "value"]],
   Unary: [["Token", "operator"], ["Expr", "right"]],
   Variable: [["Token", "name"]],
-  Assign: [["Token", "name"], ["Expr", "value"]]
+  Assign: [["Token", "name"], ["Expr", "value"]],
+  Logical: [["Expr", "left"], ["Token", "operator"], ["Expr", "right"]],
 };
 
 const STATEMENT_TYPES = {
   Block: [["Stmt[]", "statements"]],
   Expression: [["Expr", "expression"]],
+  If: [["Expr", "condition"], ["Stmt", "thenBranch"], ["Stmt", "elseBranch"]],
   Print: [["Expr", "expression"]],
   Var: [["Token", "name"], ["Expr", "initializer"]],
+  While: [["Expr", "condition"], ["Stmt", "body"]],
 }
 
 /**
@@ -66,6 +69,9 @@ function defineAst(baseName, types) {
   const file = `${imports.join("\n")}
 
 export class ${baseName} {
+  /**
+   * @returns {any}
+   */
   accept(visitor) {
     throw new Error("Cannot invoke accept on abstract class '${baseName}'");
   }

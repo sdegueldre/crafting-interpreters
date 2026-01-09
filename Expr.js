@@ -1,6 +1,9 @@
 /** @typedef {import("./Token").Token} Token */
 
 export class Expr {
+  /**
+   * @returns {any}
+   */
   accept(visitor) {
     throw new Error("Cannot invoke accept on abstract class 'Expr'");
   }
@@ -95,5 +98,23 @@ export class Assign extends Expr {
 
   accept(visitor) {
     return visitor.visitAssignExpr(this);
+  }
+}
+ 
+export class Logical extends Expr {
+  /**
+   @param {Expr} left
+   @param {Token} operator
+   @param {Expr} right
+   */
+  constructor(left, operator, right) {
+    super();
+    this.left = left;
+    this.operator = operator;
+    this.right = right;
+  }
+
+  accept(visitor) {
+    return visitor.visitLogicalExpr(this);
   }
 }

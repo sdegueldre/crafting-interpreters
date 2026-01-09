@@ -33,7 +33,7 @@ export class Environment {
    */
   assign(name, value) {
     if (Object.hasOwn(this.values, name.lexeme))
-      this.values[name.lexeme] = value;
+      return this.values[name.lexeme] = value;
     if (this.enclosing)
       return this.enclosing.assign(name, value);
     throw new RuntimeError(name, `Undefined variable '${name.lexeme}'.`);
