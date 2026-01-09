@@ -16,7 +16,6 @@ export class Environment {
     this.values[name] = value;
   }
   /**
-   * 
    * @param {import('./Token').Token} name 
    */
   get(name) {
@@ -25,6 +24,15 @@ export class Environment {
     if (this.enclosing)
       return this.enclosing.get(name);
     throw new RuntimeError(name, `Undefined variable '${name.lexeme}'.`);
+  }
+  /**
+   * @param {number} distance 
+   * @param {string} name 
+   */
+  getAt(distance, name) {
+    let env = this;
+    for (let i = 0; i < distance; i++) env = env.enclosing;
+    return env.values[name];
   }
   /**
    * @param {import('./Token').Token} name 
@@ -37,5 +45,16 @@ export class Environment {
     if (this.enclosing)
       return this.enclosing.assign(name, value);
     throw new RuntimeError(name, `Undefined variable '${name.lexeme}'.`);
+  }
+  /**
+   * @param {number} distance 
+   * @param {import('./Token').Token} name 
+   * @param {any} value 
+   * @returns 
+   */
+  assignAt(distance, name, value) {
+    let env = this;
+    for (let i = 0; i < distance; i++) env = env.enclosing;
+    env.values[name.lexeme] = value;
   }
 }

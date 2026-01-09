@@ -1,13 +1,10 @@
-fun makeCounter() {
-  var i = 0;
-  fun count() {
-    i = i + 1;
-    print i;
+var a = "global";
+fun getFn() {
+  var a = "local";
+  fun inner() {
+    print a;
   }
-
-  return count;
+  return inner;
 }
 
-var counter = makeCounter();
-counter(); // "1".
-counter(); // "2".
+getFn()();

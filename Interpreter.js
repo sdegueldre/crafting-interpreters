@@ -66,6 +66,7 @@ class Clock extends LoxCallable {
 export class Interpreter {
   globals = new Environment();
   environment = this.globals;
+  locals = new Map();
   constructor() {
     this.globals.define("clock", new Clock())
   }
@@ -82,6 +83,14 @@ export class Interpreter {
    */
   execute(stmt) {
     stmt.accept(this);
+  }
+  /**
+   * 
+   * @param {import('./Expr').Expr} expr 
+   * @param {number} depth 
+   */
+  resolve(expr, depth) {
+    this.locals.set(expr, depth);
   }
   /**
    * @param {import('./Stmt.js').Stmt[]} statements
@@ -199,7 +208,20 @@ export class Interpreter {
    * @returns 
    */
   visitVariableExpr(expr) {
-    return this.environment.get(expr.name);
+    return this.lookUpVariable(expr.name, expr);
+  }
+  /**
+   * @param {import('./Token').Token} name 
+   * @param {import('./Expr').Expr} expr 
+   * @returns {any}
+   */
+  lookUpVariable(name, expr) {
+    const distance = this.locals.get(expr);
+    if (distance !== undefined) {
+      return this.environment.getAt(distance, name.lexeme);
+    } else {
+      return this.globals.get(name);
+    }
   }
   /**
    * @param {import('./Expr').Assign} expr 
@@ -207,7 +229,14 @@ export class Interpreter {
    */
   visitAssignExpr(expr) {
     const value = this.evaluate(expr.value);
-    this.environment.assign(expr.name, value);
+
+    const distance = this.locals.get(expr);
+    if (distance !== undefined) {
+      this.environment.assignAt(distance, expr.name, value);
+    } else {
+      this.globals.assign(expr.name, value);
+    }
+
     return value;
   }
   /**

@@ -7,6 +7,7 @@ import { TokenType } from "./TokenType.js";
 import { Parser } from "./Parser.js";
 import { AstPrinter } from "./AstPrinter.js";
 import { Interpreter } from "./Interpreter.js";
+import { Resolver } from "./Resolver.js";
 
 function parseOption(optStr) {
   if (optStr.startsWith("--")) {
@@ -66,6 +67,10 @@ export class Lox {
       for (const stmt of statements)
         console.log(this.astPrinter.print(stmt));
     }
+
+    const resolver = new Resolver(this.interpreter);
+    resolver.resolve(statements);
+    if (this.hadError) return;
 
     if (this.options.no_run) return;
 
