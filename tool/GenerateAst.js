@@ -9,6 +9,7 @@ if (args.length != 1) {
 const outputDir = args[0];
 const EXPRESSION_TYPES = {
   Binary: [["Expr", "left"], ["Token", "operator"], ["Expr", "right"]],
+  Call: [["Expr", "callee"], ["Token", "paren"], ["Expr[]", "args"]],
   Grouping: [["Expr", "expression"]],
   Literal: [["object", "value"]],
   Unary: [["Token", "operator"], ["Expr", "right"]],
@@ -20,8 +21,10 @@ const EXPRESSION_TYPES = {
 const STATEMENT_TYPES = {
   Block: [["Stmt[]", "statements"]],
   Expression: [["Expr", "expression"]],
+  Function: [["Token", "name"], ["Token[]", "params"], ["Stmt[]", "body"]],
   If: [["Expr", "condition"], ["Stmt", "thenBranch"], ["Stmt", "elseBranch"]],
   Print: [["Expr", "expression"]],
+  Return: [["Token", "keyword"], ["Expr", "value"]],
   Var: [["Token", "name"], ["Expr", "initializer"]],
   While: [["Expr", "condition"], ["Stmt", "body"]],
 }

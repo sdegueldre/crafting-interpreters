@@ -59,13 +59,14 @@ export class Lox {
 
     const parser = new Parser(tokens);
     const statements = parser.parse();
+
+    // Stop if there was a syntax error.
+    if (this.hadError) return;
     if(this.options.print_ast) {
       for (const stmt of statements)
         console.log(this.astPrinter.print(stmt));
     }
 
-    // Stop if there was a syntax error.
-    if (this.hadError) return;
     if (this.options.no_run) return;
 
     this.interpreter.interpret(statements);

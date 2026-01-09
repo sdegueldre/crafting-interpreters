@@ -1,6 +1,8 @@
 import { Environment } from './Environment.js';
 import { Lox } from './Lox.js';
-import { Stmt } from './Stmt.js';
+import { LoxCallable } from './LoxCallable.js';
+import { LoxFunction } from './LoxFunction.js';
+import { Return } from './Return.js';
 import { Token } from './Token.js';
 import { TokenType } from './TokenType.js';
 
@@ -44,12 +46,29 @@ function checkNumberOperands(operator, left, right) {
 }
 
 function stringify(object) {
-  if (object == null) return "nil";
+  if (object === null) return "nil";
+  if (typeof object === "string") return `"${object.replaceAll('"', '\\"')}"`;
   return object.toString();
 }
 
+class Clock extends LoxCallable {
+  get arity() {
+    return 0;
+  }
+  call() {
+    return Date.now() / 1000;
+  }
+  toString() {
+    return "<native function 'clock'>"
+  }
+}
+
 export class Interpreter {
-  environment = new Environment();
+  globals = new Environment();
+  environment = this.globals;
+  constructor() {
+    this.globals.define("clock", new Clock())
+  }
   /**
    * @param {import('./Expr').Expr} expr 
    * @returns 
@@ -66,6 +85,7 @@ export class Interpreter {
   }
   /**
    * @param {import('./Stmt.js').Stmt[]} statements
+   * @param {Environment} environment
    * @returns 
    */
   executeBlock(statements, environment) {
@@ -204,6 +224,21 @@ export class Interpreter {
     return this.evaluate(expr.right);
   }
   /**
+   * @param {import('./Expr').Call} expr 
+   * @returns 
+   */
+  visitCallExpr(expr) {
+    const callee = this.evaluate(expr.callee);
+    if (!(callee instanceof LoxCallable)) {
+      throw new RuntimeError(expr.paren, `'${stringify(callee)}' is not callable.`);
+    }
+    const args = expr.args.map(arg => this.evaluate(arg));
+    if (args.length != callee.arity) {
+      throw new RuntimeError(expr.paren, `Expected ${callee.arity} arguments but got ${args.length}.`);
+    }
+    return callee.call(this, args);
+  }
+  /**
    * @param {import('./Stmt').Expression} stmt 
    * @returns 
    */
@@ -247,5 +282,19 @@ export class Interpreter {
    */
   visitWhileStmt(stmt) {
     while (isTruthy(this.evaluate(stmt.condition))) this.execute(stmt.body);
+  }
+  /**
+   * @param {import('./Stmt').Function} stmt 
+   * @returns 
+   */
+  visitFunctionStmt(stmt) {
+    this.environment.define(stmt.name.lexeme, new LoxFunction(stmt, this.environment));
+  }
+  /**
+   * @param {import('./Stmt').Return} stmt 
+   * @returns 
+   */
+  visitReturnStmt(stmt) {
+    throw new Return(stmt.value && this.evaluate(stmt.value))
   }
 }

@@ -27,6 +27,24 @@ export class Binary extends Expr {
   }
 }
  
+export class Call extends Expr {
+  /**
+   @param {Expr} callee
+   @param {Token} paren
+   @param {Expr[]} args
+   */
+  constructor(callee, paren, args) {
+    super();
+    this.callee = callee;
+    this.paren = paren;
+    this.args = args;
+  }
+
+  accept(visitor) {
+    return visitor.visitCallExpr(this);
+  }
+}
+ 
 export class Grouping extends Expr {
   /**
    @param {Expr} expression

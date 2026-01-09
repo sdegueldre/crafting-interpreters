@@ -38,6 +38,24 @@ export class Expression extends Stmt {
   }
 }
  
+export class Function extends Stmt {
+  /**
+   @param {Token} name
+   @param {Token[]} params
+   @param {Stmt[]} body
+   */
+  constructor(name, params, body) {
+    super();
+    this.name = name;
+    this.params = params;
+    this.body = body;
+  }
+
+  accept(visitor) {
+    return visitor.visitFunctionStmt(this);
+  }
+}
+ 
 export class If extends Stmt {
   /**
    @param {Expr} condition
@@ -67,6 +85,22 @@ export class Print extends Stmt {
 
   accept(visitor) {
     return visitor.visitPrintStmt(this);
+  }
+}
+ 
+export class Return extends Stmt {
+  /**
+   @param {Token} keyword
+   @param {Expr} value
+   */
+  constructor(keyword, value) {
+    super();
+    this.keyword = keyword;
+    this.value = value;
+  }
+
+  accept(visitor) {
+    return visitor.visitReturnStmt(this);
   }
 }
  
