@@ -45,6 +45,22 @@ export class Call extends Expr {
   }
 }
  
+export class Get extends Expr {
+  /**
+   @param {Expr} object
+   @param {Token} name
+   */
+  constructor(object, name) {
+    super();
+    this.object = object;
+    this.name = name;
+  }
+
+  accept(visitor) {
+    return visitor.visitGetExpr(this);
+  }
+}
+ 
 export class Grouping extends Expr {
   /**
    @param {Expr} expression
@@ -103,6 +119,20 @@ export class Variable extends Expr {
   }
 }
  
+export class This extends Expr {
+  /**
+   @param {Token} keyword
+   */
+  constructor(keyword) {
+    super();
+    this.keyword = keyword;
+  }
+
+  accept(visitor) {
+    return visitor.visitThisExpr(this);
+  }
+}
+ 
 export class Assign extends Expr {
   /**
    @param {Token} name
@@ -116,6 +146,24 @@ export class Assign extends Expr {
 
   accept(visitor) {
     return visitor.visitAssignExpr(this);
+  }
+}
+ 
+export class Set extends Expr {
+  /**
+   @param {Expr} object
+   @param {Token} name
+   @param {Expr} value
+   */
+  constructor(object, name, value) {
+    super();
+    this.object = object;
+    this.name = name;
+    this.value = value;
+  }
+
+  accept(visitor) {
+    return visitor.visitSetExpr(this);
   }
 }
  

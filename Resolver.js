@@ -1,18 +1,29 @@
+import { RuntimeError } from './Interpreter.js';
 import { Lox } from './Lox.js';
+import { Token } from './Token.js';
+import { TokenType } from './TokenType.js';
 
 const FunctionType = /** @type {const} */ ({
   NONE: Symbol("None"),
-  FUNCTION: Symbol("Function"),
+  FUNCTION: Symbol("Func"),
+  INITIALIZER: Symbol("Initializer"),
+  METHOD: Symbol("METHOD"),
+})
+
+const ClassType = /** @type {const} */ ({
+  NONE: Symbol("None"),
+  CLASS: Symbol("Class"),
+  METHOD: Symbol("Method"),
 })
 
 export class Resolver {
   scopes = [];
   currentFunction = FunctionType.NONE;
+  currentClass = ClassType.NONE;
   constructor(interpreter) {
     this.interpreter = interpreter;
   }
   /**
-   * 
    * @param {import('./Stmt').Block} stmt 
    * @returns 
    */
@@ -20,7 +31,24 @@ export class Resolver {
     this.beginScope();
     this.resolve(stmt.statements);
     this.endScope();
-    return null;
+  }
+  /**
+   * @param {import('./Stmt').Class} stmt 
+   * @returns 
+   */
+  visitClassStmt(stmt) {
+    const enclosingClass = this.currentClass;
+    this.declare(stmt.name);
+    this.define(stmt.name);
+    this.currentClass = ClassType.CLASS;
+    this.beginScope();
+    this.scopes.at(-1)['this'] = true;
+    for (const method of stmt.methods) {
+      const declaration = method.name.lexeme === "init" ? FunctionType.INITIALIZER : FunctionType.METHOD;
+      this.resolveFunction(method, declaration);
+    }
+    this.endScope();
+    this.currentClass = enclosingClass;
   }
   /**
    * 
@@ -49,7 +77,6 @@ export class Resolver {
       this.resolve([stmt.initializer]);
     }
     this.define(stmt.name);
-    return null;
   }
   /**
    * 
@@ -83,11 +110,20 @@ export class Resolver {
     this.resolveLocal(expr, expr.name);
   }
   /**
+   * @param {import('./Expr').This} expr 
+   */
+  visitThisExpr(expr) {
+    if (this.currentClass === ClassType.NONE) {
+      Lox.error(expr.keyword, "Can't use 'this' outside of a class.");
+    }
+    this.resolveLocal(expr, expr.keyword);
+  }
+  /**
    * @param {import('./Expr').Expr} expr 
    * @param {import('./Token.js').Token} name
    */
   resolveLocal(expr, name) {
-    for(let i = this.scopes.length - 1; i >= 0; i--) {
+    for (let i = this.scopes.length - 1; i >= 0; i--) {
       if (Object.hasOwn(this.scopes[i], name.lexeme))
         return this.interpreter.resolve(expr, this.scopes.length - i - 1);
     }
@@ -100,15 +136,15 @@ export class Resolver {
     this.resolveLocal(expr, expr.name);
   }
   /**
-   * @param {import('./Stmt').Function} stmt 
+   * @param {import('./Stmt').Func} stmt 
    */
-  visitFunctionStmt(stmt) {
+  visitFuncStmt(stmt) {
     this.declare(stmt.name);
     this.define(stmt.name);
     this.resolveFunction(stmt, FunctionType.FUNCTION);
   }
   /**
-   * @param {import('./Stmt').Function} func
+   * @param {import('./Stmt').Func} func
    * @param {(typeof FunctionType)[keyof(typeof FunctionType)]} type
    */
   resolveFunction(func, type) {
@@ -147,9 +183,11 @@ export class Resolver {
    * @param {import('./Stmt').Return} stmt 
    */
   visitReturnStmt(stmt) {
-    if (this.currentFunction !== FunctionType.FUNCTION)
+    if (this.currentFunction === FunctionType.NONE)
       Lox.error(stmt.keyword, "Can't return from top-level code.");
-    if(!stmt.value) return;
+    if (!stmt.value) return;
+    if (this.currentFunction === FunctionType.INITIALIZER)
+      Lox.error(stmt.keyword, "Can't return value from class initializer.");
     this.resolve([stmt.value]);
   }
   /**
@@ -177,7 +215,7 @@ export class Resolver {
    */
   visitCallExpr(expr) {
     this.resolve([expr.callee]);
-    for(const argument of expr.args) {
+    for (const argument of expr.args) {
       this.resolve([argument]);
     }
   }
@@ -194,10 +232,22 @@ export class Resolver {
     return;
   }
   /**
+   * 
    * @param {import('./Expr').Logical} expr 
    */
   visitLogicalExpr(expr) {
-    this.resolve([expr.left]);
-    this.resolve([expr.right]);
+    this.resolve([expr.left, expr.right]);
+  }
+  /**
+   * @param {import('./Expr').Get} expr 
+   */
+  visitGetExpr(expr) {
+    this.resolve([expr.object])
+  }
+  /**
+   * @param {import('./Expr').Set} expr 
+   */
+  visitSetExpr(expr) {
+    this.resolve([expr.object, expr.value])
   }
 }

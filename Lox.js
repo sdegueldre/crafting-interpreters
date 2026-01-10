@@ -67,12 +67,11 @@ export class Lox {
       for (const stmt of statements)
         console.log(this.astPrinter.print(stmt));
     }
-
+    if (this.options.no_run) return;
+    
     const resolver = new Resolver(this.interpreter);
     resolver.resolve(statements);
     if (this.hadError) return;
-
-    if (this.options.no_run) return;
 
     this.interpreter.interpret(statements);
   }

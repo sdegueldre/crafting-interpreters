@@ -1,7 +1,9 @@
 import { Environment } from './Environment.js';
 import { Lox } from './Lox.js';
 import { LoxCallable } from './LoxCallable.js';
+import { LoxClass } from './LoxClass.js';
 import { LoxFunction } from './LoxFunction.js';
+import { LoxInstance } from './LoxInstance.js';
 import { Return } from './Return.js';
 import { Token } from './Token.js';
 import { TokenType } from './TokenType.js';
@@ -72,14 +74,12 @@ export class Interpreter {
   }
   /**
    * @param {import('./Expr').Expr} expr 
-   * @returns 
    */
   evaluate(expr) {
     return expr.accept(this);
   }
   /**
    * @param {import('./Stmt.js').Stmt} stmt
-   * @returns 
    */
   execute(stmt) {
     stmt.accept(this);
@@ -95,7 +95,6 @@ export class Interpreter {
   /**
    * @param {import('./Stmt.js').Stmt[]} statements
    * @param {Environment} environment
-   * @returns 
    */
   executeBlock(statements, environment) {
     const previous = this.environment;
@@ -111,7 +110,6 @@ export class Interpreter {
   }
   /**
    * @param {import('./Stmt.js').Stmt[]} statements 
-   * @returns 
    */
   interpret(statements) {
     try {
@@ -125,21 +123,18 @@ export class Interpreter {
   }
   /**
    * @param {import('./Expr').Literal} expr 
-   * @returns 
    */
   visitLiteralExpr(expr) {
     return expr.value;
   }
   /**
    * @param {import('./Expr').Grouping} expr 
-   * @returns 
    */
   visitGroupingExpr(expr) {
     return this.evaluate(expr.expression);
   }
   /**
    * @param {import('./Expr').Unary} expr 
-   * @returns 
    */
   visitUnaryExpr(expr) {
     const right = this.evaluate(expr.right);
@@ -158,7 +153,6 @@ export class Interpreter {
   }
   /**
    * @param {import('./Expr').Binary} expr 
-   * @returns 
    */
   visitBinaryExpr(expr) {
     const left = this.evaluate(expr.left);
@@ -205,10 +199,15 @@ export class Interpreter {
   }
   /**
    * @param {import('./Expr').Variable} expr 
-   * @returns 
    */
   visitVariableExpr(expr) {
     return this.lookUpVariable(expr.name, expr);
+  }
+  /**
+   * @param {import('./Expr').This} expr 
+   */
+  visitThisExpr(expr) {
+    return this.lookUpVariable(expr.keyword, expr);
   }
   /**
    * @param {import('./Token').Token} name 
@@ -225,7 +224,6 @@ export class Interpreter {
   }
   /**
    * @param {import('./Expr').Assign} expr 
-   * @returns 
    */
   visitAssignExpr(expr) {
     const value = this.evaluate(expr.value);
@@ -240,8 +238,20 @@ export class Interpreter {
     return value;
   }
   /**
+   * @param {import('./Expr').Set} expr 
+   */
+  visitSetExpr(expr) {
+    const obj = this.evaluate(expr.object);
+    if (!(obj instanceof LoxInstance)) {
+      throw new RuntimeError(expr.name, `Can only set properties on instances, got '${stringify(obj)}'`);
+    }
+    const value = this.evaluate(expr.value);
+    obj.set(expr.name, value);
+    return value;
+  }
+  /**
+   * 
    * @param {import('./Expr').Logical} expr 
-   * @returns 
    */
   visitLogicalExpr(expr) {
     const left = this.evaluate(expr.left);
@@ -254,7 +264,6 @@ export class Interpreter {
   }
   /**
    * @param {import('./Expr').Call} expr 
-   * @returns 
    */
   visitCallExpr(expr) {
     const callee = this.evaluate(expr.callee);
@@ -268,15 +277,23 @@ export class Interpreter {
     return callee.call(this, args);
   }
   /**
+   * @param {import('./Expr').Get} expr 
+   */
+  visitGetExpr(expr) {
+    const obj = this.evaluate(expr.object);
+    if (!(obj instanceof LoxInstance)) {
+      throw new RuntimeError(expr.name, `Property access is only valid on instances, got '${stringify(obj)}'.`);
+    }
+    return obj.get(expr.name);
+  }
+  /**
    * @param {import('./Stmt').Expression} stmt 
-   * @returns 
    */
   visitExpressionStmt(stmt) {
     this.evaluate(stmt.expression);
   }
   /**
    * @param {import('./Stmt').Print} stmt 
-   * @returns 
    */
   visitPrintStmt(stmt) {
     const value = this.evaluate(stmt.expression);
@@ -284,7 +301,6 @@ export class Interpreter {
   }
   /**
    * @param {import('./Stmt').Var} stmt 
-   * @returns 
    */
   visitVarStmt(stmt) {
     const value = stmt.initializer ? this.evaluate(stmt.initializer) : null;
@@ -292,14 +308,12 @@ export class Interpreter {
   }
   /**
    * @param {import('./Stmt').Block} stmt 
-   * @returns 
    */
   visitBlockStmt(stmt) {
     this.executeBlock(stmt.statements, new Environment(this.environment));
   }
   /**
    * @param {import('./Stmt').If} stmt 
-   * @returns 
    */
   visitIfStmt(stmt) {
     if (isTruthy(this.evaluate(stmt.condition))) this.execute(stmt.thenBranch);
@@ -307,23 +321,32 @@ export class Interpreter {
   }
   /**
    * @param {import('./Stmt').While} stmt 
-   * @returns 
    */
   visitWhileStmt(stmt) {
     while (isTruthy(this.evaluate(stmt.condition))) this.execute(stmt.body);
   }
   /**
-   * @param {import('./Stmt').Function} stmt 
-   * @returns 
+   * @param {import('./Stmt').Func} stmt 
    */
-  visitFunctionStmt(stmt) {
+  visitFuncStmt(stmt) {
     this.environment.define(stmt.name.lexeme, new LoxFunction(stmt, this.environment));
   }
   /**
    * @param {import('./Stmt').Return} stmt 
-   * @returns 
    */
   visitReturnStmt(stmt) {
     throw new Return(stmt.value && this.evaluate(stmt.value))
+  }
+  /**
+   * @param {import('./Stmt').Class} stmt 
+   */
+  visitClassStmt(stmt) {
+    this.environment.define(stmt.name.lexeme, null);
+
+    const methods = {};
+    for (const method of stmt.methods) {
+      methods[method.name.lexeme] = new LoxFunction(method, this.environment, method.name.lexeme === "init");
+    }
+    this.environment.assign(stmt.name, new LoxClass(stmt.name.lexeme, methods));
   }
 }

@@ -1,5 +1,5 @@
-/** @typedef {import("./Expr").Expr} Expr */
 /** @typedef {import("./Token").Token} Token */
+/** @typedef {import("./Expr").Expr} Expr */
 
 export class Stmt {
   /**
@@ -24,6 +24,22 @@ export class Block extends Stmt {
   }
 }
  
+export class Class extends Stmt {
+  /**
+   @param {Token} name
+   @param {Func[]} methods
+   */
+  constructor(name, methods) {
+    super();
+    this.name = name;
+    this.methods = methods;
+  }
+
+  accept(visitor) {
+    return visitor.visitClassStmt(this);
+  }
+}
+ 
 export class Expression extends Stmt {
   /**
    @param {Expr} expression
@@ -38,7 +54,7 @@ export class Expression extends Stmt {
   }
 }
  
-export class Function extends Stmt {
+export class Func extends Stmt {
   /**
    @param {Token} name
    @param {Token[]} params
@@ -52,7 +68,7 @@ export class Function extends Stmt {
   }
 
   accept(visitor) {
-    return visitor.visitFunctionStmt(this);
+    return visitor.visitFuncStmt(this);
   }
 }
  

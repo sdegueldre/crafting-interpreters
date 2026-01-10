@@ -1,9 +1,9 @@
 /** @typedef {import("./Expr").Expr} Expr */
 /** @typedef {import('./Token').Token} Token */
 
-import { Assign, Binary, Call, Grouping, Literal, Logical, Unary, Variable } from "./Expr.js";
+import { Assign, Binary, Call, Get, Grouping, Literal, Logical, Set, This, Unary, Variable } from "./Expr.js";
 import { Lox } from "./Lox.js";
-import { Block, Expression, Function, If, Print, Return, Stmt, Var, While } from "./Stmt.js";
+import { Block, Class, Expression, Func, If, Print, Return, Stmt, Var, While } from "./Stmt.js";
 import { TokenType } from "./TokenType.js";
 
 /** @typedef {keyof(typeof TokenType)} TokenType */
@@ -36,6 +36,7 @@ export class Parser {
    */
   declaration() {
     try {
+      if (this.match(TokenType.CLASS)) return this.classDeclaration();
       if (this.match(TokenType.VAR)) return this.varDeclaration();
       if (this.match(TokenType.FUN)) return this.function("function");
 
@@ -44,6 +45,19 @@ export class Parser {
       if (!(error instanceof ParseError)) throw error;
       this.synchronize();
     }
+  }
+  /**
+   * @returns {Stmt}
+   */
+  classDeclaration() {
+    const name = this.consume(TokenType.IDENTIFIER, "Expect class name.");
+    this.consume(TokenType.LEFT_BRACE, "Expect '{' before class body.");
+    const functions = [];
+    while (!this.check(TokenType.RIGHT_BRACE) && !this.isAtEnd()) {
+      functions.push(this.function("method"));
+    }
+    this.consume(TokenType.RIGHT_BRACE, "Expect '}' after body.");
+    return new Class(name, functions);
   }
   /**
    * @returns {Stmt}
@@ -72,7 +86,7 @@ export class Parser {
     this.consume(TokenType.RIGHT_PAREN, "Expect ')' after parameter list.");
     this.consume(TokenType.LEFT_BRACE, `Expect '{' after ${kind} parameters.`);
 
-    return new Function(name, params, this.block());
+    return new Func(name, params, this.block());
   }
   /**
    * @returns {Stmt}
@@ -200,9 +214,10 @@ export class Parser {
     if (this.match(TokenType.EQUAL)) {
       const equals = this.previous();
       const value = this.assignment();
-      if (expr instanceof Variable) {
-        const name = expr.name;
-        return new Assign(name, value)
+      if ((expr instanceof Variable) ) {
+        return new Assign(expr.name, value);
+      } else if (expr instanceof Get) {
+        return new Set(expr.object, expr.name, value);
       }
       this.error(equals, "Invalid assignment target");
     }
@@ -300,16 +315,23 @@ export class Parser {
    */
   call() {
     let expr = this.primary()
-    while (this.match(TokenType.LEFT_PAREN)) {
-      const args = [];
-      while (!this.check(TokenType.RIGHT_PAREN)) {
-        if (args.length >= 255)
-          this.error(this.peek(), "Can't have more than 255 arguments.");
-        args.push(this.expression());
-        if (!this.match(TokenType.COMMA)) break;
+    while (true) {
+      if (this.match(TokenType.LEFT_PAREN)) {
+        const args = [];
+        while (!this.check(TokenType.RIGHT_PAREN)) {
+          if (args.length >= 255)
+            this.error(this.peek(), "Can't have more than 255 arguments.");
+          args.push(this.expression());
+          if (!this.match(TokenType.COMMA)) break;
+        }
+        this.consume(TokenType.RIGHT_PAREN, "Expect ')' after arguments.")
+        expr = new Call(expr, this.previous(), args);
+      } else if (this.match(TokenType.DOT)) {
+          const name = this.consume(TokenType.IDENTIFIER, "Expect field name.");
+          expr = new Get(expr, name);
+      } else {
+        break;
       }
-      this.consume(TokenType.RIGHT_PAREN, "Expect ')' after arguments.")
-      expr = new Call(expr, this.previous(), args);
     }
     return expr;
   }
@@ -325,6 +347,7 @@ export class Parser {
       return new Literal(this.previous().literal);
     }
 
+    if (this.match(TokenType.THIS)) return new This(this.previous());
     if (this.match(TokenType.IDENTIFIER)) return new Variable(this.previous());
 
     if (this.match(TokenType.LEFT_PAREN)) {

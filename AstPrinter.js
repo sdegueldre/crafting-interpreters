@@ -2,7 +2,6 @@ export class AstPrinter {
   indent = 0;
   /**
    * @param {{accept(visitor: AstPrinter)}} ast 
-   * @returns 
    */
   print(ast) {
     return ast.accept(this);
@@ -11,7 +10,6 @@ export class AstPrinter {
   /**
    * @param {string} name 
    * @param  {import('./Expr').Expr[]} exprs 
-   * @returns 
    */
   parenthesize(name, ...exprs) {
     return `(${name} ${exprs.map(e => e.accept(this)).join(" ")})`
@@ -19,7 +17,6 @@ export class AstPrinter {
 
   /**
    * @param {import('./Expr').Binary} expr 
-   * @returns 
    */
   visitBinaryExpr(expr) {
     return this.parenthesize(expr.operator.lexeme, expr.left, expr.right);
@@ -27,7 +24,6 @@ export class AstPrinter {
 
   /**
    * @param {import('./Expr').Grouping} expr 
-   * @returns 
    */
   visitGroupingExpr(expr) {
     return this.parenthesize("group", expr.expression);
@@ -35,7 +31,6 @@ export class AstPrinter {
 
   /**
    * @param {import('./Expr').Literal} expr 
-   * @returns 
    */
   visitLiteralExpr(expr) {
     if (expr.value == null) return "nil";
@@ -45,35 +40,48 @@ export class AstPrinter {
 
   /**
    * @param {import('./Expr').Unary} expr 
-   * @returns 
    */
   visitUnaryExpr(expr) {
     return this.parenthesize(expr.operator.lexeme, expr.right);
   }
   /**
    * @param {import('./Expr').Variable} expr 
-   * @returns 
    */
   visitVariableExpr(expr) {
     return expr.name.lexeme;
   }
   /**
+   * @param {import('./Expr').This} expr 
+   */
+  visitThisExpr(expr) {
+    return expr.keyword.lexeme;
+  }
+  /**
    * @param {import('./Expr').Assign} expr 
-   * @returns 
    */
   visitAssignExpr(expr) {
     return this.parenthesize(`${expr.name.lexeme} =`, expr.value);
   }
   /**
    * @param {import('./Expr').Call} expr 
-   * @returns 
    */
   visitCallExpr(expr) {
     return `${expr.callee.accept(this)}(${expr.args.map(a => a.accept(this)).join(", ")})`;
   }
   /**
+   * @param {import('./Expr').Get} expr 
+   */
+  visitGetExpr(expr) {
+    return `${expr.object.accept(this)}.${expr.name.lexeme}`;
+  }
+  /**
+   * @param {import('./Expr').Set} expr 
+   */
+  visitSetExpr(expr) {
+    return `${expr.object.accept(this)}.${expr.name.lexeme} = ${expr.value.accept(this)}`;
+  }
+  /**
    * @param {import('./Stmt').Var} stmt 
-   * @returns 
    */
   visitVarStmt(stmt) {
     const str = `var ${stmt.name.lexeme}`
@@ -82,14 +90,12 @@ export class AstPrinter {
   }
   /**
    * @param {import('./Stmt').While} stmt 
-   * @returns 
    */
   visitWhileStmt(stmt) {
     return `while ${stmt.condition.accept(this)} ${stmt.body.accept(this)}`;
   }
   /**
    * @param {import('./Stmt').If} stmt 
-   * @returns 
    */
   visitIfStmt(stmt) {
     const text = `if ${stmt.condition.accept(this)} ${stmt.thenBranch.accept(this)}`;
@@ -100,7 +106,6 @@ export class AstPrinter {
   }
   /**
    * @param {import('./Stmt').Stmt[]} statements 
-   * @returns 
    */
   block(statements) {
     this.indent++;
@@ -110,38 +115,39 @@ export class AstPrinter {
   }
   /**
    * @param {import('./Stmt').Block} stmt 
-   * @returns 
    */
   visitBlockStmt(stmt) {
     return this.block(stmt.statements);
   }
   /**
    * @param {import('./Stmt').Expression} stmt 
-   * @returns 
    */
   visitExpressionStmt(stmt) {
     return stmt.expression.accept(this);
   }
   /**
    * @param {import('./Stmt').Print} stmt 
-   * @returns 
    */
   visitPrintStmt(stmt) {
     return `print ${stmt.expression.accept(this)}`;
   }
   /**
-   * @param {import('./Stmt').Function} stmt 
-   * @returns 
+   * @param {import('./Stmt').Func} stmt 
    */
-  visitFunctionStmt(stmt) {
+  visitFuncStmt(stmt) {
     return `fun ${stmt.name.lexeme} (${stmt.params.map(p => p.lexeme).join(", ")}) ${this.block(stmt.body)}`;
   }
   /**
    * @param {import('./Stmt').Return} stmt 
-   * @returns 
    */
   visitReturnStmt(stmt) {
     if (!stmt.value) return `return`;
     return `return ${stmt.value.accept(this)}`;
+  }
+  /**
+   * @param {import('./Stmt').Class} stmt 
+   */
+  visitClassStmt(stmt) {
+    return `class ${stmt.name.lexeme} ${this.block(stmt.methods)}`;
   }
 }

@@ -1,10 +1,13 @@
-var a = "global";
-fun getFn() {
-  var a = "local";
-  fun inner() {
-    print a;
+class C {
+  init(a, b) {
+    this.a = a;
+    this.b = b;
+    print "init";
   }
-  return inner;
+
+  sum() {
+    return this.a + this.b;
+  }
 }
 
-getFn()();
+print C(1, 2).sum();

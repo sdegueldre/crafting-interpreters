@@ -10,18 +10,22 @@ const outputDir = args[0];
 const EXPRESSION_TYPES = {
   Binary: [["Expr", "left"], ["Token", "operator"], ["Expr", "right"]],
   Call: [["Expr", "callee"], ["Token", "paren"], ["Expr[]", "args"]],
+  Get: [["Expr", "object"], ["Token", "name"]],
   Grouping: [["Expr", "expression"]],
   Literal: [["object", "value"]],
   Unary: [["Token", "operator"], ["Expr", "right"]],
   Variable: [["Token", "name"]],
+  This: [["Token", "keyword"]],
   Assign: [["Token", "name"], ["Expr", "value"]],
+  Set: [["Expr", "object"], ["Token", "name"], ["Expr", "value"]],
   Logical: [["Expr", "left"], ["Token", "operator"], ["Expr", "right"]],
 };
 
 const STATEMENT_TYPES = {
   Block: [["Stmt[]", "statements"]],
+  Class: [["Token", "name"], ["Func[]", "methods"]],
   Expression: [["Expr", "expression"]],
-  Function: [["Token", "name"], ["Token[]", "params"], ["Stmt[]", "body"]],
+  Func: [["Token", "name"], ["Token[]", "params"], ["Stmt[]", "body"]],
   If: [["Expr", "condition"], ["Stmt", "thenBranch"], ["Stmt", "elseBranch"]],
   Print: [["Expr", "expression"]],
   Return: [["Token", "keyword"], ["Expr", "value"]],
