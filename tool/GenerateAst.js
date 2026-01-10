@@ -16,6 +16,7 @@ const EXPRESSION_TYPES = {
   Unary: [["Token", "operator"], ["Expr", "right"]],
   Variable: [["Token", "name"]],
   This: [["Token", "keyword"]],
+  Super: [["Token", "keyword"], ["Token", "method"]],
   Assign: [["Token", "name"], ["Expr", "value"]],
   Set: [["Expr", "object"], ["Token", "name"], ["Expr", "value"]],
   Logical: [["Expr", "left"], ["Token", "operator"], ["Expr", "right"]],
@@ -23,7 +24,7 @@ const EXPRESSION_TYPES = {
 
 const STATEMENT_TYPES = {
   Block: [["Stmt[]", "statements"]],
-  Class: [["Token", "name"], ["Func[]", "methods"]],
+  Class: [["Token", "name"], ["Variable", "superclass"], ["Func[]", "methods"]],
   Expression: [["Expr", "expression"]],
   Func: [["Token", "name"], ["Token[]", "params"], ["Stmt[]", "body"]],
   If: [["Expr", "condition"], ["Stmt", "thenBranch"], ["Stmt", "elseBranch"]],
@@ -43,7 +44,7 @@ function defineClass(baseName, className, fields) {
   return `
 export class ${className} extends ${baseName} {
   /**
-${fields.map(([type, name]) => `   @param {${type}} ${name}`).join("\n")}
+${fields.map(([type, name]) => `   * @param {${type}} ${name}`).join("\n")}
    */
   constructor(${fields.map(f => f[1]).join(", ")}) {
     super();
@@ -59,6 +60,7 @@ ${fields.map(([type, fname]) => `    this.${fname} = ${fname};`).join("\n")}
 const typeImports = {
   Token: `/** @typedef {import("./Token").Token} Token */`,
   Expr: `/** @typedef {import("./Expr").Expr} Expr */`,
+  Variable: `/** @typedef {import("./Expr").Variable} Variable */`,
 }
 
 function defineAst(baseName, types) {

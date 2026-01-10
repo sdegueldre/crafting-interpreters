@@ -11,9 +11,9 @@ export class Expr {
 
 export class Binary extends Expr {
   /**
-   @param {Expr} left
-   @param {Token} operator
-   @param {Expr} right
+   * @param {Expr} left
+   * @param {Token} operator
+   * @param {Expr} right
    */
   constructor(left, operator, right) {
     super();
@@ -29,9 +29,9 @@ export class Binary extends Expr {
  
 export class Call extends Expr {
   /**
-   @param {Expr} callee
-   @param {Token} paren
-   @param {Expr[]} args
+   * @param {Expr} callee
+   * @param {Token} paren
+   * @param {Expr[]} args
    */
   constructor(callee, paren, args) {
     super();
@@ -47,8 +47,8 @@ export class Call extends Expr {
  
 export class Get extends Expr {
   /**
-   @param {Expr} object
-   @param {Token} name
+   * @param {Expr} object
+   * @param {Token} name
    */
   constructor(object, name) {
     super();
@@ -63,7 +63,7 @@ export class Get extends Expr {
  
 export class Grouping extends Expr {
   /**
-   @param {Expr} expression
+   * @param {Expr} expression
    */
   constructor(expression) {
     super();
@@ -77,7 +77,7 @@ export class Grouping extends Expr {
  
 export class Literal extends Expr {
   /**
-   @param {object} value
+   * @param {object} value
    */
   constructor(value) {
     super();
@@ -91,8 +91,8 @@ export class Literal extends Expr {
  
 export class Unary extends Expr {
   /**
-   @param {Token} operator
-   @param {Expr} right
+   * @param {Token} operator
+   * @param {Expr} right
    */
   constructor(operator, right) {
     super();
@@ -107,7 +107,7 @@ export class Unary extends Expr {
  
 export class Variable extends Expr {
   /**
-   @param {Token} name
+   * @param {Token} name
    */
   constructor(name) {
     super();
@@ -121,7 +121,7 @@ export class Variable extends Expr {
  
 export class This extends Expr {
   /**
-   @param {Token} keyword
+   * @param {Token} keyword
    */
   constructor(keyword) {
     super();
@@ -133,10 +133,26 @@ export class This extends Expr {
   }
 }
  
+export class Super extends Expr {
+  /**
+   * @param {Token} keyword
+   * @param {Token} method
+   */
+  constructor(keyword, method) {
+    super();
+    this.keyword = keyword;
+    this.method = method;
+  }
+
+  accept(visitor) {
+    return visitor.visitSuperExpr(this);
+  }
+}
+ 
 export class Assign extends Expr {
   /**
-   @param {Token} name
-   @param {Expr} value
+   * @param {Token} name
+   * @param {Expr} value
    */
   constructor(name, value) {
     super();
@@ -151,9 +167,9 @@ export class Assign extends Expr {
  
 export class Set extends Expr {
   /**
-   @param {Expr} object
-   @param {Token} name
-   @param {Expr} value
+   * @param {Expr} object
+   * @param {Token} name
+   * @param {Expr} value
    */
   constructor(object, name, value) {
     super();
@@ -169,9 +185,9 @@ export class Set extends Expr {
  
 export class Logical extends Expr {
   /**
-   @param {Expr} left
-   @param {Token} operator
-   @param {Expr} right
+   * @param {Expr} left
+   * @param {Token} operator
+   * @param {Expr} right
    */
   constructor(left, operator, right) {
     super();

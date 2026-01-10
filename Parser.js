@@ -1,7 +1,7 @@
 /** @typedef {import("./Expr").Expr} Expr */
 /** @typedef {import('./Token').Token} Token */
 
-import { Assign, Binary, Call, Get, Grouping, Literal, Logical, Set, This, Unary, Variable } from "./Expr.js";
+import { Assign, Binary, Call, Get, Grouping, Literal, Logical, Set, Super, This, Unary, Variable } from "./Expr.js";
 import { Lox } from "./Lox.js";
 import { Block, Class, Expression, Func, If, Print, Return, Stmt, Var, While } from "./Stmt.js";
 import { TokenType } from "./TokenType.js";
@@ -46,18 +46,20 @@ export class Parser {
       this.synchronize();
     }
   }
-  /**
-   * @returns {Stmt}
-   */
   classDeclaration() {
     const name = this.consume(TokenType.IDENTIFIER, "Expect class name.");
+    let superclass;
+    if (this.match(TokenType.LESS)) {
+      const identifier = this.consume(TokenType.IDENTIFIER, "Expect superclass name.");
+      superclass = new Variable(identifier);
+    }
     this.consume(TokenType.LEFT_BRACE, "Expect '{' before class body.");
     const functions = [];
     while (!this.check(TokenType.RIGHT_BRACE) && !this.isAtEnd()) {
       functions.push(this.function("method"));
     }
     this.consume(TokenType.RIGHT_BRACE, "Expect '}' after body.");
-    return new Class(name, functions);
+    return new Class(name, superclass, functions);
   }
   /**
    * @returns {Stmt}
@@ -71,7 +73,7 @@ export class Parser {
     return new Var(name, initializer);
   }
   /**
-   * @returns {Stmt}
+   * @param {string} kind
    */
   function(kind) {
     const name = this.consume(TokenType.IDENTIFIER, `Expect ${kind} name.`);
@@ -101,9 +103,6 @@ export class Parser {
 
     return this.expressionStatement();
   }
-  /**
-   * @returns {Stmt}
-   */
   for() {
     this.consume(TokenType.LEFT_PAREN, "Expect '(' after 'for'.");
     let initializer;
@@ -345,6 +344,13 @@ export class Parser {
 
     if (this.match(TokenType.NUMBER, TokenType.STRING)) {
       return new Literal(this.previous().literal);
+    }
+
+    if (this.match(TokenType.SUPER)) {
+      const keyword = this.previous();
+      this.consume(TokenType.DOT, "Expect '.' after 'super'.");
+      const method = this.consume(TokenType.IDENTIFIER, "Expect superclass method name.");
+      return new Super(keyword, method);
     }
 
     if (this.match(TokenType.THIS)) return new This(this.previous());

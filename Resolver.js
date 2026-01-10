@@ -13,7 +13,7 @@ const FunctionType = /** @type {const} */ ({
 const ClassType = /** @type {const} */ ({
   NONE: Symbol("None"),
   CLASS: Symbol("Class"),
-  METHOD: Symbol("Method"),
+  SUBCLASS: Symbol("Subclass"),
 })
 
 export class Resolver {
@@ -37,17 +37,27 @@ export class Resolver {
    * @returns 
    */
   visitClassStmt(stmt) {
-    const enclosingClass = this.currentClass;
     this.declare(stmt.name);
     this.define(stmt.name);
+    const enclosingClass = this.currentClass;
     this.currentClass = ClassType.CLASS;
+    if (stmt.superclass) {
+      this.currentClass = ClassType.SUBCLASS;
+      if (stmt.superclass.name.lexeme === stmt.name.lexeme) {
+        Lox.error(stmt.superclass.name, "A class can't inherit from itself");
+      }
+      this.resolve([stmt.superclass]);
+      this.beginScope();
+      this.scopes.at(-1)["super"] = true;
+    }
     this.beginScope();
-    this.scopes.at(-1)['this'] = true;
+    this.scopes.at(-1)["this"] = true;
     for (const method of stmt.methods) {
       const declaration = method.name.lexeme === "init" ? FunctionType.INITIALIZER : FunctionType.METHOD;
       this.resolveFunction(method, declaration);
     }
     this.endScope();
+    if (stmt.superclass) this.endScope();
     this.currentClass = enclosingClass;
   }
   /**
@@ -115,6 +125,15 @@ export class Resolver {
   visitThisExpr(expr) {
     if (this.currentClass === ClassType.NONE) {
       Lox.error(expr.keyword, "Can't use 'this' outside of a class.");
+    }
+    this.resolveLocal(expr, expr.keyword);
+  }
+  /**
+   * @param {import('./Expr').Super} expr 
+   */
+  visitSuperExpr(expr) {
+    if (this.currentClass !== ClassType.SUBCLASS) {
+      Lox.error(expr.keyword, "Can't use 'super' outside of a subclass.");
     }
     this.resolveLocal(expr, expr.keyword);
   }

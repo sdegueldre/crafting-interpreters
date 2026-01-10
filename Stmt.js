@@ -1,4 +1,5 @@
 /** @typedef {import("./Token").Token} Token */
+/** @typedef {import("./Expr").Variable} Variable */
 /** @typedef {import("./Expr").Expr} Expr */
 
 export class Stmt {
@@ -12,7 +13,7 @@ export class Stmt {
 
 export class Block extends Stmt {
   /**
-   @param {Stmt[]} statements
+   * @param {Stmt[]} statements
    */
   constructor(statements) {
     super();
@@ -26,12 +27,14 @@ export class Block extends Stmt {
  
 export class Class extends Stmt {
   /**
-   @param {Token} name
-   @param {Func[]} methods
+   * @param {Token} name
+   * @param {Variable} superclass
+   * @param {Func[]} methods
    */
-  constructor(name, methods) {
+  constructor(name, superclass, methods) {
     super();
     this.name = name;
+    this.superclass = superclass;
     this.methods = methods;
   }
 
@@ -42,7 +45,7 @@ export class Class extends Stmt {
  
 export class Expression extends Stmt {
   /**
-   @param {Expr} expression
+   * @param {Expr} expression
    */
   constructor(expression) {
     super();
@@ -56,9 +59,9 @@ export class Expression extends Stmt {
  
 export class Func extends Stmt {
   /**
-   @param {Token} name
-   @param {Token[]} params
-   @param {Stmt[]} body
+   * @param {Token} name
+   * @param {Token[]} params
+   * @param {Stmt[]} body
    */
   constructor(name, params, body) {
     super();
@@ -74,9 +77,9 @@ export class Func extends Stmt {
  
 export class If extends Stmt {
   /**
-   @param {Expr} condition
-   @param {Stmt} thenBranch
-   @param {Stmt} elseBranch
+   * @param {Expr} condition
+   * @param {Stmt} thenBranch
+   * @param {Stmt} elseBranch
    */
   constructor(condition, thenBranch, elseBranch) {
     super();
@@ -92,7 +95,7 @@ export class If extends Stmt {
  
 export class Print extends Stmt {
   /**
-   @param {Expr} expression
+   * @param {Expr} expression
    */
   constructor(expression) {
     super();
@@ -106,8 +109,8 @@ export class Print extends Stmt {
  
 export class Return extends Stmt {
   /**
-   @param {Token} keyword
-   @param {Expr} value
+   * @param {Token} keyword
+   * @param {Expr} value
    */
   constructor(keyword, value) {
     super();
@@ -122,8 +125,8 @@ export class Return extends Stmt {
  
 export class Var extends Stmt {
   /**
-   @param {Token} name
-   @param {Expr} initializer
+   * @param {Token} name
+   * @param {Expr} initializer
    */
   constructor(name, initializer) {
     super();
@@ -138,8 +141,8 @@ export class Var extends Stmt {
  
 export class While extends Stmt {
   /**
-   @param {Expr} condition
-   @param {Stmt} body
+   * @param {Expr} condition
+   * @param {Stmt} body
    */
   constructor(condition, body) {
     super();

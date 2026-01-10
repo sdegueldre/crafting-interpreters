@@ -57,6 +57,12 @@ export class AstPrinter {
     return expr.keyword.lexeme;
   }
   /**
+   * @param {import('./Expr').Super} expr 
+   */
+  visitSuperExpr(expr) {
+    return `${expr.keyword.lexeme}.${expr.method.lexeme}`;
+  }
+  /**
    * @param {import('./Expr').Assign} expr 
    */
   visitAssignExpr(expr) {

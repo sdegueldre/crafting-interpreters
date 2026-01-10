@@ -49,7 +49,6 @@ function checkNumberOperands(operator, left, right) {
 
 function stringify(object) {
   if (object === null) return "nil";
-  if (typeof object === "string") return `"${object.replaceAll('"', '\\"')}"`;
   return object.toString();
 }
 
@@ -287,6 +286,18 @@ export class Interpreter {
     return obj.get(expr.name);
   }
   /**
+   * @param {import('./Expr').Super} expr 
+   */
+  visitSuperExpr(expr) {
+    const distance = this.locals.get(expr);
+    const superclass = this.environment.getAt(distance, "super");
+    const method = superclass.findMethod(expr.method.lexeme);
+    if (!method) {
+      throw new RuntimeError(expr.method, `Superclass doesn't implement method '${expr.method.lexeme}'.`);
+    }
+    return method.bind(this.environment.getAt(distance - 1, "this"));
+  }
+  /**
    * @param {import('./Stmt').Expression} stmt 
    */
   visitExpressionStmt(stmt) {
@@ -342,11 +353,21 @@ export class Interpreter {
    */
   visitClassStmt(stmt) {
     this.environment.define(stmt.name.lexeme, null);
+    let superclass;
+    if (stmt.superclass) {
+      superclass = this.evaluate(stmt.superclass);
+      if (!(superclass instanceof LoxClass)) {
+        throw new RuntimeError(stmt.superclass.name, `Superclass must be a class, got '${stringify(superclass)}'`);
+      }
+      this.environment = new Environment(this.environment);
+      this.environment.define("super", superclass);
+    }
 
     const methods = {};
     for (const method of stmt.methods) {
       methods[method.name.lexeme] = new LoxFunction(method, this.environment, method.name.lexeme === "init");
     }
-    this.environment.assign(stmt.name, new LoxClass(stmt.name.lexeme, methods));
+    if (stmt.superclass) this.environment = this.environment.enclosing;
+    this.environment.assign(stmt.name, new LoxClass(stmt.name.lexeme, superclass, methods));
   }
 }

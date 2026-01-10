@@ -19,7 +19,7 @@ export class LoxInstance {
     }
     const method = this.class.findMethod(propName.lexeme);
     if (method) return method.bind(this);
-    throw new RuntimeError(propName, `Undefined property '${propName.lexeme}'.`)
+    throw new RuntimeError(propName, `Undefined property '${propName.lexeme}'.`);
   }
   /**
    * @param {import('./Token').Token} propName 
@@ -27,7 +27,6 @@ export class LoxInstance {
   set(propName, value) {
     return this.fields[propName.lexeme] = value;
   }
-
   toString() {
     return `<${this.class.name} instance>`;
   }

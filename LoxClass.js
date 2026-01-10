@@ -1,16 +1,17 @@
 import { LoxCallable } from "./LoxCallable.js";
-import { LoxFunction } from "./LoxFunction.js";
 import { LoxInstance } from "./LoxInstance.js";
 
 export class LoxClass extends LoxCallable {
   /**
    * 
-   * @param {string} name 
-   * @param {{[key: string]: LoxFunction}} methods
+   * @param {string} name
+   * @param {LoxClass} superclass
+   * @param {{[key: string]: import('./LoxFunction.js').LoxFunction}} methods
    */
-  constructor(name, methods) {
+  constructor(name, superclass, methods) {
     super();
     this.name = name;
+    this.superclass = superclass;
     this.methods = methods;
   }
   get arity() {
@@ -32,9 +33,11 @@ export class LoxClass extends LoxCallable {
   }
   /**
    * @param {string} name 
+   * @returns {import('./LoxFunction.js').LoxFunction}
    */
   findMethod(name) {
     if(Object.hasOwn(this.methods, name)) return this.methods[name];
+    if (this.superclass) return this.superclass.findMethod(name);
   }
   toString() {
     return `<class ${this.name}>`
