@@ -23,6 +23,7 @@ export class Environment {
       return this.values[name.lexeme];
     if (this.enclosing)
       return this.enclosing.get(name);
+    debugger;
     throw new RuntimeError(name, `Undefined variable '${name.lexeme}'.`);
   }
   /**

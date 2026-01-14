@@ -1,1 +1,107 @@
-print "Hello, World!";
+fun cons(left, right) {
+  fun self(methName) {
+    if (methName == 0) return left;
+    return right;
+  }
+  return self;
+}
+
+fun lookup(pairs, key) {
+  if (pairs == nil) return nil;
+  var kv = pairs(0);
+  if (kv(0) == key) return kv(1);
+  return lookup(pairs(1), key);
+}
+
+fun list(val) {
+  var head = cons(val, nil);
+  var _List;
+  fun add(val) {
+    head = cons(val, head);
+    return _List;
+  }
+  fun List(fname) {
+    if (fname == "head") return head;
+    if (fname == "tail") return head(1);
+    if (fname == "add") return add;
+  }
+  _List = List;
+  return List;
+}
+
+fun map() {
+  var pairs = nil;
+  fun add(key, val) {
+    if (pairs == nil) {
+      pairs = list(cons(key, val));
+    } else {
+      pairs("add")(cons(key, val));
+    }
+    return add;
+  }
+  fun get(key) {
+    return lookup(pairs("head"), key);
+  }
+  fun self(fname) {
+    if (fname == "get") return get;
+    if (fname == "add") return add;
+  }
+  return self;
+}
+
+
+
+var digitMap = map();
+digitMap("add")
+  (0, "0")
+  (1, "1")
+  (2, "2")
+  (3, "3")
+  (4, "4")
+  (5, "5")
+  (6, "6")
+  (7, "7")
+  (8, "8")
+  (9, "9");
+
+
+print digitMap("get")(7);
+
+// // returns a % b;
+// fun mod(a, b) {
+//   var result = a;
+//   while (result >= b)
+//     result = result - b;
+//   return result;
+// }
+
+// fun intDiv(a, b) {
+//   return (a - mod(a, b)) / b;
+// }
+
+// fun intToString(n) {
+//   var rightMostDigit = mod(n, 10);
+//   var str = digitMap("get")(rightMostDigit);
+//   if (n < 10) {
+//     return str;
+//   }
+//   return intToString((n - rightMostDigit) / 10) + str;
+// }
+
+// print "80085: " + intToString(80085);
+
+// fun vec2(x, y) {
+//   fun add(other) {
+//     return vec2(x + other("getX"), y + other("getY"));
+//   }
+
+//   fun interface(fnSlot) {
+//     if (fnSlot == "getX") return x;
+//     if (fnSlot == "getY") return y;
+//     if (fnSlot == "string") return "vec<"+intToString(x)+", "+intToString(y)+">";
+//     if (fnSlot == "add") return add;
+//     print "unknown slot '"+fnSlot+"'.";
+//   }
+
+//   return interface;
+// }

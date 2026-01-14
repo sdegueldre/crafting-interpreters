@@ -201,7 +201,7 @@ function isDigit(c) {
 function isAlpha(c) {
   const code = c.charCodeAt(0);
   return code >= 'a'.charCodeAt(0) && code <= 'z'.charCodeAt(0) ||
-    code >= 'A'.charCodeAt(0) && code <= 'Z'.charCodeAt(0) || code === '_';
+    code >= 'A'.charCodeAt(0) && code <= 'Z'.charCodeAt(0) || c === '_';
 }
 
 function isAlphaNumeric(c) {
