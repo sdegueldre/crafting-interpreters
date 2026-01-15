@@ -23,7 +23,7 @@ void initVM();
 void freeVM();
 InterpretResult interpret(const char* source);
 InterpretResult run(void);
-void push(Value value);
-Value pop();
+// static void push(Value value);
+// static Value pop();
 
 #endif
