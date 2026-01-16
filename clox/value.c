@@ -2,8 +2,10 @@
 
 #include <assert.h>
 #include <stdio.h>
+#include <string.h>
 
 #include "memory.h"
+#include "object.h"
 
 void initValueArray(ValueArray* array) {
   array->values = NULL;
@@ -33,6 +35,7 @@ void printValue(Value value) {
     case VAL_BOOL: printf(AS_BOOL(value) ? "true" : "false"); break;
     case VAL_NUMBER: printf("%g", AS_NUMBER(value)); break;
     case VAL_NIL: printf("nil"); break;
+    case VAL_OBJ: printObj(AS_OBJ(value)); break;
   }
 }
 
@@ -42,6 +45,13 @@ bool valuesEqual(Value a, Value b) {
     case VAL_BOOL:   return AS_BOOL(a) == AS_BOOL(b);
     case VAL_NIL:    return true;
     case VAL_NUMBER: return AS_NUMBER(a) == AS_NUMBER(b);
+    case VAL_OBJ: {
+      ObjString* aString = AS_STRING(AS_OBJ(a));
+      ObjString* bString = AS_STRING(AS_OBJ(b));
+      return aString->length == bString->length &&
+          memcmp(aString->chars, bString->chars,
+                 aString->length) == 0;
+    }
     default:
       assert(false); // Unreachable.
   }
