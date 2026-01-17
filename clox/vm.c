@@ -29,14 +29,17 @@ static void runtimeError(const char* format, ...) {
 
 void initVM() {
   resetStack();
+  initTable(&vm.strings);
   vm.objects = NULL;
 }
 
 void freeVM() {
+  freeTable(&vm.strings);
   Obj* current = vm.objects;
   while (current != NULL) {
+    Obj* next = current->next;
     freeObject(current);
-    current = current->next;
+    current = next;
   }
   vm.objects = NULL;
 }

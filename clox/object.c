@@ -8,8 +8,6 @@
 
 extern VM vm;
 
-static void freeString(ObjString* str);
-
 Obj* allocateObject(size_t size, ObjType type) {
   Obj* obj = reallocate(NULL, 0, size);
   obj->type = type;
@@ -36,25 +34,47 @@ bool isObjectType(Value val, ObjType type) {
 /**
  * Takes ownership of chars
  */
-static ObjString* allocateString(char* chars, int length) {
+static ObjString* allocateString(char* chars, int length, uint32_t hash) {
   ObjString* str = ALLOCATE_OBJ(ObjString, OBJ_STRING);
   str->length = length;
   str->chars = chars;
+  str->hash = hash;
+  tableSet(&vm.strings, str, NIL_VAL);
+  printf("Allocating string '%s'(%p)\n", chars, str);
   return str;
 }
 
-static void freeString(ObjString* str) {
+static uint32_t hashString(const char* key, int length) {
+  uint32_t hash = 2166136261u;
+  for (int i = 0; i < length; i++) {
+    hash ^= (uint8_t)key[i];
+    hash *= 16777619;
+  }
+  return hash;
 }
 
 ObjString* copyString(const char* chars, int length) {
+  uint32_t hash = hashString(chars, length);
+  ObjString* interned = tableFindString(&vm.strings, chars, length, hash);
+  if (interned != NULL) {
+    printf("Reusing string '%s'(%p)\n", interned->chars, interned);
+    return interned;
+  }
   char* charsCopy = ALLOCATE(char, length + 1);
   memcpy(charsCopy, chars, length);
   charsCopy[length] = '\0';
-  return allocateString(charsCopy, length);
+  return allocateString(charsCopy, length, hash);
 }
 
 ObjString* takeString(char* chars, int length) {
-  return allocateString(chars, length);
+  uint32_t hash = hashString(chars, length);
+  ObjString* interned = tableFindString(&vm.strings, chars, length, hash);
+  if (interned != NULL) {
+    printf("Reusing string '%s'(%p)\n", interned->chars, interned);
+    FREE_ARRAY(char, chars, length + 1);
+    return interned;
+  }
+  return allocateString(chars, length, hash);
 }
 
 void printObj(Obj* obj) {
