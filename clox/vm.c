@@ -6,8 +6,8 @@
 
 #include "common.h"
 #include "compiler.h"
-#include "memory.h"
 #include "debug.h"
+#include "memory.h"
 #include "object.h"
 
 VM vm;
@@ -29,12 +29,14 @@ static void runtimeError(const char* format, ...) {
 
 void initVM() {
   resetStack();
-  initTable(&vm.strings);
   vm.objects = NULL;
+  initTable(&vm.globals);
+  initTable(&vm.strings);
 }
 
 void freeVM() {
   freeTable(&vm.strings);
+  freeTable(&vm.globals);
   Obj* current = vm.objects;
   while (current != NULL) {
     Obj* next = current->next;
@@ -94,6 +96,7 @@ InterpretResult interpret(const char* source) {
 InterpretResult run() {
 #define READ_BYTE() (*vm.ip++)
 #define READ_CONSTANT() (vm.chunk->constants.values[READ_BYTE()])
+#define READ_STRING() (AS_STRING(AS_OBJ(READ_CONSTANT())))
 #define BINARY_OP(outputType, op)                     \
   do {                                                \
     if (!IS_NUMBER(peek(0)) || !IS_NUMBER(peek(1))) { \
@@ -177,13 +180,46 @@ InterpretResult run() {
         }
         push(NUMBER_VAL(-AS_NUMBER(pop())));
         break;
-      case OP_RETURN: {
+      case OP_PRINT: {
         printValue(pop());
         printf("\n");
+        break;
+      }
+      case OP_POP: {
+        pop();
+        break;
+      }
+      case OP_DEFINE_GLOBAL: {
+        ObjString* name = READ_STRING();
+        tableSet(&vm.globals, name, pop());
+        break;
+      }
+      case OP_SET_GLOBAL: {
+        ObjString* name = READ_STRING();
+        if (tableSet(&vm.globals, name, peek(0))) {
+          tableDelete(&vm.globals, name);
+          runtimeError("Undefined global variable '%s'.\n", name->chars);
+          return INTERPRET_RUNTIME_ERROR;
+        }
+        break;
+      }
+      case OP_GET_GLOBAL: {
+        ObjString* name = READ_STRING();
+        Value val;
+
+        if (!tableGet(&vm.globals, name, &val)) {
+          runtimeError("Undefined global variable '%s'.\n", name->chars);
+          return INTERPRET_RUNTIME_ERROR;
+        }
+        push(val);
+        break;
+      }
+      case OP_RETURN: {
         return INTERPRET_OK;
       }
       default: {
-        runtimeError("Unknown instruction %x\n", instruction);
+        runtimeError("Unknown instruction %d (0x%02X)\n", instruction,
+                     instruction);
         return INTERPRET_RUNTIME_ERROR;
       }
     }
@@ -192,4 +228,5 @@ InterpretResult run() {
 #undef BINARY_OP
 #undef READ_BYTE
 #undef READ_CONSTANT
+#undef READ_STRING
 }

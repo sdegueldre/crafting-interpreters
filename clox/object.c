@@ -40,7 +40,6 @@ static ObjString* allocateString(char* chars, int length, uint32_t hash) {
   str->chars = chars;
   str->hash = hash;
   tableSet(&vm.strings, str, NIL_VAL);
-  printf("Allocating string '%s'(%p)\n", chars, str);
   return str;
 }
 
@@ -57,7 +56,6 @@ ObjString* copyString(const char* chars, int length) {
   uint32_t hash = hashString(chars, length);
   ObjString* interned = tableFindString(&vm.strings, chars, length, hash);
   if (interned != NULL) {
-    printf("Reusing string '%s'(%p)\n", interned->chars, interned);
     return interned;
   }
   char* charsCopy = ALLOCATE(char, length + 1);
@@ -70,7 +68,6 @@ ObjString* takeString(char* chars, int length) {
   uint32_t hash = hashString(chars, length);
   ObjString* interned = tableFindString(&vm.strings, chars, length, hash);
   if (interned != NULL) {
-    printf("Reusing string '%s'(%p)\n", interned->chars, interned);
     FREE_ARRAY(char, chars, length + 1);
     return interned;
   }
